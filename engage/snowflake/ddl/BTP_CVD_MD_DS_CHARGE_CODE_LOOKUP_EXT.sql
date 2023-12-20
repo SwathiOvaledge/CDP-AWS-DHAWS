@@ -1,0 +1,22 @@
+USE ROLE ENT_ENGAGE_OWNER_{{ENVR}}_ROLE;
+USE DATABASE ENT_STG_ENGAGE_{{DB_SUFFIX}};
+USE SCHEMA LOAD_STG;
+
+CREATE OR REPLACE EXTERNAL TABLE LOAD_STG.BTP_CVD_MD_DS_CHARGE_CODE_LOOKUP_EXT
+(
+ORA_CODE VARCHAR AS (NULLIF(($1:ORA_CODE::VARCHAR),'')),
+SAP_CODE VARCHAR AS (NULLIF(($1:SAP_CODE::VARCHAR),'')),
+topic_name VARCHAR AS (NULLIF(($1:topic_name::VARCHAR),'')),
+topic_partition VARCHAR AS (NULLIF(($1:topic_partition::VARCHAR),'')),
+OFFSET NUMBER(38, 0) AS ($1:offset::NUMBER(38, 0)),
+topic_record_timestamp VARCHAR AS (NULLIF(($1:topic_record_timestamp::VARCHAR),'')),
+LOAD_DATE TIMESTAMP_NTZ(9) AS (TO_TIMESTAMP
+           (
+             SPLIT_PART(SPLIT_PART(METADATA$FILENAME, '/', 4), '=', 2) ||
+             SPLIT_PART(SPLIT_PART(METADATA$FILENAME, '/', 5), '=', 2),
+             'YYYY-MM-DD'
+           ))
+)
+PARTITION BY (LOAD_DATE)
+LOCATION = @STG_ENGAGE/btp/onetime/formatted/fct-btphana.cvd-md-ds-charge-code-lookup/
+FILE_FORMAT = (FORMAT_NAME=FF.PARQUET_FORMAT);
